@@ -1,0 +1,1 @@
+# Traditional vs ML-KEM Comparison\n\n| Metric | Traditional (ECDSA) | ML-KEM Confidential |\n|---|---|---|\n| **Auth/KEM time (s)** | 0.016294 | 0.000115 |\n| **Send+confirm (s)** | 21.113796 | 10.155024 |\n| **Gas used** | 282619 | 334612 |\n| **Crypto bytes** | 65 | 768 |

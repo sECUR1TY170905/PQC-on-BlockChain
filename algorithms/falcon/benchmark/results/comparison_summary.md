@@ -1,0 +1,1 @@
+# Traditional vs PQC Comparison\n\n| Metric | Traditional (ECDSA) | PQC Hybrid |\n|---|---|---|\n| **Signing time (s)** | 0.016361 | 0.003993 |\n| **Send+confirm (s)** | 14.371971 | 9.810138 |\n| **Gas used** | 248431 | 268595 |\n| **Auth bytes** | 65 | 656 |

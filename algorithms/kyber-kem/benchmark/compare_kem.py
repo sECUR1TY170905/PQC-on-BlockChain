@@ -12,6 +12,7 @@ RESULTS_DIR = Path(__file__).resolve().parent / "results"
 TRADITIONAL_RESULT = RESULTS_DIR / "traditional_result.json"
 KEM_RESULT = RESULTS_DIR / "kyber_confidentiality_result.json"
 OUTPUT_PLOT = RESULTS_DIR / "comparison_kem.png"
+OUTPUT_MD = RESULTS_DIR / "comparison_kem_summary.md"
 
 
 def load_result(path: Path) -> dict:
@@ -32,10 +33,10 @@ def print_summary(traditional: dict, kem_result: dict) -> None:
     print(f"ML-KEM ciphertext size: {kem_result['kem']['ciphertext_size_bytes']} bytes")
 
 
-def save_plot(traditional: dict, kem_result: dict) -> Path:
+def save_plot_and_md(traditional: dict, kem_result: dict) -> tuple[Path, Path]:
     labels = [
-        "Auth/KEM time",
-        "Send+confirm",
+        "Auth/KEM time (s)",
+        "Send+confirm (s)",
         "Gas used",
         "Crypto bytes",
     ]
@@ -52,28 +53,44 @@ def save_plot(traditional: dict, kem_result: dict) -> Path:
         kem_result["kem"]["ciphertext_size_bytes"],
     ]
 
-    x_positions = range(len(labels))
-    width = 0.35
+    # 1. Xuất ra file Markdown
+    md_lines = [
+        "# Traditional vs ML-KEM Comparison",
+        "",
+        "| Metric | Traditional (ECDSA) | ML-KEM Confidential |",
+        "|---|---|---|",
+    ]
+    for i in range(4):
+        # Format số thập phân cho thời gian
+        val_trad = f"{traditional_values[i]:.6f}" if isinstance(traditional_values[i], float) else traditional_values[i]
+        val_kem = f"{kem_values[i]:.6f}" if isinstance(kem_values[i], float) else kem_values[i]
+        md_lines.append(f"| **{labels[i]}** | {val_trad} | {val_kem} |")
+    
+    OUTPUT_MD.write_text("\\n".join(md_lines), encoding="utf-8")
 
-    plt.figure(figsize=(10, 6))
-    plt.bar([x - width / 2 for x in x_positions], traditional_values, width=width, label="Traditional")
-    plt.bar([x + width / 2 for x in x_positions], kem_values, width=width, label="ML-KEM Confidential")
-    plt.xticks(list(x_positions), labels)
-    plt.ylabel("Value")
-    plt.title("Traditional vs ML-KEM Confidentiality")
-    plt.legend()
+    # 2. Chia thành 4 biểu đồ con (Subplots)
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    fig.suptitle("Traditional vs ML-KEM Confidentiality", fontsize=16)
+    
+    for i, ax in enumerate(axs.flat):
+        ax.bar(["Traditional", "ML-KEM"], [traditional_values[i], kem_values[i]], color=["#1f77b4", "#2ca02c"])
+        ax.set_title(labels[i], fontweight='bold')
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+
     plt.tight_layout()
     plt.savefig(OUTPUT_PLOT)
     plt.close()
-    return OUTPUT_PLOT
+    
+    return OUTPUT_PLOT, OUTPUT_MD
 
 
 def main() -> None:
     traditional = load_result(TRADITIONAL_RESULT)
     kem_result = load_result(KEM_RESULT)
     print_summary(traditional, kem_result)
-    plot_path = save_plot(traditional, kem_result)
+    plot_path, md_path = save_plot_and_md(traditional, kem_result)
     print(f"Plot saved to: {plot_path}")
+    print(f"Markdown report saved to: {md_path}")
 
 
 if __name__ == "__main__":

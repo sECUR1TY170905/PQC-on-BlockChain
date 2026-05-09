@@ -12,6 +12,7 @@ RESULTS_DIR = Path(__file__).resolve().parent / "results"
 TRADITIONAL_RESULT = RESULTS_DIR / "traditional_result.json"
 PQC_RESULT = RESULTS_DIR / "pqc_result.json"
 OUTPUT_PLOT = RESULTS_DIR / "comparison.png"
+OUTPUT_MD = RESULTS_DIR / "comparison_summary.md"
 
 
 def load_result(path: Path) -> dict:
@@ -35,10 +36,10 @@ def print_summary(traditional: dict, pqc: dict) -> None:
     print(f"PQC signature size: {pqc['pqc']['signature_size_bytes']} bytes")
 
 
-def save_plot(traditional: dict, pqc: dict) -> Path:
+def save_plot_and_md(traditional: dict, pqc: dict) -> tuple[Path, Path]:
     labels = [
-        "Signing time",
-        "Send+confirm",
+        "Signing time (s)",
+        "Send+confirm (s)",
         "Gas used",
         "Auth bytes",
     ]
@@ -55,28 +56,44 @@ def save_plot(traditional: dict, pqc: dict) -> Path:
         pqc["pqc"]["signature_size_bytes"],
     ]
 
-    x_positions = range(len(labels))
-    width = 0.35
+    # 1. Xuất ra file Markdown
+    md_lines = [
+        "# Traditional vs PQC Comparison",
+        "",
+        "| Metric | Traditional (ECDSA) | PQC Hybrid |",
+        "|---|---|---|",
+    ]
+    for i in range(4):
+        # Format số thập phân cho thời gian
+        val_trad = f"{traditional_values[i]:.6f}" if isinstance(traditional_values[i], float) else traditional_values[i]
+        val_pqc = f"{pqc_values[i]:.6f}" if isinstance(pqc_values[i], float) else pqc_values[i]
+        md_lines.append(f"| **{labels[i]}** | {val_trad} | {val_pqc} |")
+    
+    OUTPUT_MD.write_text("\\n".join(md_lines), encoding="utf-8")
 
-    plt.figure(figsize=(10, 6))
-    plt.bar([x - width / 2 for x in x_positions], traditional_values, width=width, label="Traditional")
-    plt.bar([x + width / 2 for x in x_positions], pqc_values, width=width, label="PQC Hybrid")
-    plt.xticks(list(x_positions), labels)
-    plt.ylabel("Value")
-    plt.title("Traditional vs PQC Hybrid")
-    plt.legend()
+    # 2. Chia thành 4 biểu đồ con (Subplots)
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    fig.suptitle("Traditional vs PQC Hybrid", fontsize=16)
+    
+    for i, ax in enumerate(axs.flat):
+        ax.bar(["Traditional", "PQC Hybrid"], [traditional_values[i], pqc_values[i]], color=["#1f77b4", "#ff7f0e"])
+        ax.set_title(labels[i], fontweight='bold')
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+
     plt.tight_layout()
     plt.savefig(OUTPUT_PLOT)
     plt.close()
-    return OUTPUT_PLOT
+    
+    return OUTPUT_PLOT, OUTPUT_MD
 
 
 def main() -> None:
     traditional = load_result(TRADITIONAL_RESULT)
     pqc = load_result(PQC_RESULT)
     print_summary(traditional, pqc)
-    plot_path = save_plot(traditional, pqc)
+    plot_path, md_path = save_plot_and_md(traditional, pqc)
     print(f"Plot saved to: {plot_path}")
+    print(f"Markdown report saved to: {md_path}")
 
 
 if __name__ == "__main__":

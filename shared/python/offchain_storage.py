@@ -100,11 +100,3 @@ def save_public_key(public_key: bytes, storage_dir: str | Path | None = None) ->
 
 def load_public_key(cid: str, storage_dir: str | Path | None = None) -> tuple[bytes, Path, float]:
     return load_blob(cid, "pub", storage_dir)
-
-
-def save_kem_ciphertext(ciphertext: bytes, storage_dir: str | Path | None = None) -> tuple[str, Path, float]:
-    return save_blob(ciphertext, "enc", storage_dir)
-
-
-def load_kem_ciphertext(cid: str, storage_dir: str | Path | None = None) -> tuple[bytes, Path, float]:
-    return load_blob(cid, "enc", storage_dir)

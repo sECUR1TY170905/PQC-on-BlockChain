@@ -19,7 +19,6 @@ from common import (
     write_result,
 )
 from pqcrypto.kem import ml_kem_512
-from offchain_storage import save_public_key, save_kem_ciphertext, storage_backend_name
 
 
 def derive_aes_key(shared_secret: bytes) -> bytes:
@@ -67,15 +66,9 @@ def main() -> None:
     public_key, secret_key = ml_kem_512.generate_keypair()
     keygen_seconds = time.perf_counter() - keygen_start
 
-    public_key_cid, public_key_path, public_key_upload_seconds = save_public_key(public_key)
-    with open("kyber_secret.bin", "wb") as f:
-        f.write(secret_key)
-
     encaps_start = time.perf_counter()
     kem_ciphertext, shared_secret_enc = ml_kem_512.encrypt(public_key)
     encaps_seconds = time.perf_counter() - encaps_start
-
-    ipfs_cid, ciphertext_path, ciphertext_upload_seconds = save_kem_ciphertext(kem_ciphertext)
 
     decaps_start = time.perf_counter()
     shared_secret_dec = ml_kem_512.decrypt(secret_key, kem_ciphertext)
@@ -94,7 +87,6 @@ def main() -> None:
     app_metadata = build_app_metadata()
     encrypted = True
     mode = "kyber_kem_confidential"
-    algorithm = ml_kem_512.ALGORITHM
     kem_proof_hash = w3.to_hex(w3.keccak(payload + kem_ciphertext))
 
     nonce = w3.eth.get_transaction_count(acct.address)
@@ -107,8 +99,8 @@ def main() -> None:
         app_metadata["timestamp"],
         encrypted,
         mode,
-        ipfs_cid,
-        algorithm,
+        "",
+        ml_kem_512.ALGORITHM,
     ).build_transaction(
         {
             "from": acct.address,
@@ -147,13 +139,6 @@ def main() -> None:
         "payload_hash": payload_hash,
         "kem_proof_hash": kem_proof_hash,
         "encrypted": encrypted,
-        "ipfs_cid": ipfs_cid,
-        "public_key_cid": public_key_cid,
-        "offchain_storage": {
-            "storage_backend": storage_backend_name(),
-            "ciphertext_path": str(ciphertext_path),
-            "public_key_path": str(public_key_path),
-        },
         "confidentiality": {
             "algorithm": "aes-256-gcm",
             "plaintext_size_bytes": len(plaintext),
@@ -173,8 +158,6 @@ def main() -> None:
             "kem_keygen_seconds": round(keygen_seconds, 6),
             "kem_encaps_seconds": round(encaps_seconds, 6),
             "kem_decaps_seconds": round(decaps_seconds, 6),
-            "public_key_upload_seconds": public_key_upload_seconds,
-            "ciphertext_upload_seconds": ciphertext_upload_seconds,
             "tx_build_seconds": round(build_seconds, 6),
             "ecdsa_sign_seconds": round(ecdsa_sign_seconds, 6),
             "send_and_confirm_seconds": round(send_seconds, 6),

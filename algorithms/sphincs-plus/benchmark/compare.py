@@ -22,78 +22,71 @@ def load_result(path: Path) -> dict:
 
 
 def print_summary(traditional: dict, pqc: dict) -> None:
-    print("Comparison Summary")
-    print(f"Traditional tx hash: {traditional['tx_hash']}")
-    print(f"PQC tx hash: {pqc['tx_hash']}")
-    print(f"Traditional gas used: {traditional['gas_used']}")
-    print(f"PQC gas used: {pqc['gas_used']}")
-    print(
-        "Traditional signing time: "
-        f"{traditional['benchmark']['ecdsa_sign_seconds']} s"
-    )
-    print(f"PQC sign time: {pqc['benchmark']['pqc_sign_seconds']} s")
-    print(f"PQC verify time: {pqc['benchmark']['pqc_verify_seconds']} s")
-    print(f"PQC signature size: {pqc['pqc']['signature_size_bytes']} bytes")
+    print("=== SPHINCS+ (sphincs_sha2_128f_simple) Comparison Summary ===")
+    print(f"  Traditional gas used   : {traditional['gas_used']}")
+    print(f"  PQC gas used           : {pqc['gas_used']}")
+    print(f"  Traditional sign time  : {traditional['benchmark']['ecdsa_sign_seconds']} s")
+    print(f"  PQC sign time          : {pqc['benchmark']['pqc_sign_seconds']} s")
+    print(f"  PQC verify time        : {pqc['benchmark']['pqc_verify_seconds']} s")
+    print(f"  PQC signature size     : {pqc['pqc']['signature_size_bytes']} bytes")
 
 
 def save_plot_and_md(traditional: dict, pqc: dict) -> tuple[Path, Path]:
-    labels = [
-        "Signing time (s)",
-        "Send+confirm (s)",
-        "Gas used",
-        "Auth bytes",
-    ]
-    traditional_values = [
-        traditional["benchmark"]["ecdsa_sign_seconds"],
-        traditional["benchmark"]["send_and_confirm_seconds"],
-        traditional["gas_used"],
-        traditional["benchmark"]["signature_size_bytes"],
-    ]
-    pqc_values = [
-        pqc["benchmark"]["pqc_sign_seconds"] + pqc["benchmark"]["pqc_verify_seconds"],
-        pqc["benchmark"]["send_and_confirm_seconds"],
-        pqc["gas_used"],
-        pqc["pqc"]["signature_size_bytes"],
-    ]
+    trad_sign    = traditional["benchmark"]["ecdsa_sign_seconds"]
+    pqc_sign     = pqc["benchmark"]["pqc_sign_seconds"] + pqc["benchmark"]["pqc_verify_seconds"]
+    trad_confirm = traditional["benchmark"]["send_and_confirm_seconds"]
+    pqc_confirm  = pqc["benchmark"]["send_and_confirm_seconds"]
+    trad_gas     = traditional["gas_used"]
+    pqc_gas      = pqc["gas_used"]
+    trad_bytes   = traditional["benchmark"]["signature_size_bytes"]
+    pqc_bytes    = pqc["pqc"]["signature_size_bytes"]
 
-    # 1. Xuất ra file Markdown
-    md_lines = [
-        "# Traditional vs PQC Comparison",
+    # --- Markdown ---
+    md = [
+        "# SPHINCS+ (sphincs_sha2_128f_simple) — Comparison Summary",
         "",
-        "| Metric | Traditional (ECDSA) | PQC Hybrid |",
-        "|---|---|---|",
+        "## A. Traditional vs PQC Hybrid",
+        "",
+        "| Metric | Traditional (ECDSA) | PQC Hybrid (SPHINCS+) |",
+        "|---|---:|---:|",
+        f"| **Signing time (s)**  | {trad_sign:.6f}  | {pqc_sign:.6f}  |",
+        f"| **Send+confirm (s)**  | {trad_confirm:.6f}  | {pqc_confirm:.6f}  |",
+        f"| **Gas used**          | {trad_gas}       | {pqc_gas}       |",
+        f"| **Auth bytes**        | {trad_bytes}     | {pqc_bytes}     |",
+        "",
+        "> **Lưu ý:** SPHINCS+ chưa được cập nhật lên contract mới (chưa có IPFS/E2E metrics).",
     ]
-    for i in range(4):
-        # Format số thập phân cho thời gian
-        val_trad = f"{traditional_values[i]:.6f}" if isinstance(traditional_values[i], float) else traditional_values[i]
-        val_pqc = f"{pqc_values[i]:.6f}" if isinstance(pqc_values[i], float) else pqc_values[i]
-        md_lines.append(f"| **{labels[i]}** | {val_trad} | {val_pqc} |")
-    
-    OUTPUT_MD.write_text("\\n".join(md_lines), encoding="utf-8")
+    OUTPUT_MD.write_text("\n".join(md), encoding="utf-8")
 
-    # 2. Chia thành 4 biểu đồ con (Subplots)
+    # --- 4 subplots (2x2) ---
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-    fig.suptitle("Traditional vs PQC Hybrid", fontsize=16)
-    
-    for i, ax in enumerate(axs.flat):
-        ax.bar(["Traditional", "PQC Hybrid"], [traditional_values[i], pqc_values[i]], color=["#1f77b4", "#ff7f0e"])
-        ax.set_title(labels[i], fontweight='bold')
-        ax.grid(axis='y', linestyle='--', alpha=0.7)
+    fig.suptitle("SPHINCS+ (sphincs_sha2_128f_simple): Benchmark Comparison", fontsize=14, fontweight="bold")
+
+    blue, orange = "#1f77b4", "#ff7f0e"
+
+    def bar2(ax, title, labels, values, colors):
+        ax.bar(labels, values, color=colors)
+        ax.set_title(title, fontweight="bold")
+        ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    bar2(axs[0, 0], "Signing time (s)",  ["Traditional", "PQC"], [trad_sign, pqc_sign],      [blue, orange])
+    bar2(axs[0, 1], "Send+confirm (s)",  ["Traditional", "PQC"], [trad_confirm, pqc_confirm], [blue, orange])
+    bar2(axs[1, 0], "Gas used",          ["Traditional", "PQC"], [trad_gas, pqc_gas],          [blue, orange])
+    bar2(axs[1, 1], "Auth bytes",        ["Traditional", "PQC"], [trad_bytes, pqc_bytes],      [blue, orange])
 
     plt.tight_layout()
-    plt.savefig(OUTPUT_PLOT)
+    plt.savefig(OUTPUT_PLOT, dpi=150)
     plt.close()
-    
     return OUTPUT_PLOT, OUTPUT_MD
 
 
 def main() -> None:
     traditional = load_result(TRADITIONAL_RESULT)
-    pqc = load_result(PQC_RESULT)
+    pqc         = load_result(PQC_RESULT)
     print_summary(traditional, pqc)
     plot_path, md_path = save_plot_and_md(traditional, pqc)
-    print(f"Plot saved to: {plot_path}")
-    print(f"Markdown report saved to: {md_path}")
+    print(f"Plot saved     : {plot_path}")
+    print(f"Markdown saved : {md_path}")
 
 
 if __name__ == "__main__":

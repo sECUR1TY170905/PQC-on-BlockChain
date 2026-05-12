@@ -6,11 +6,20 @@ import importlib.util
 import os
 from pathlib import Path
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# Trỏ ngược ra 3 cấp thư mục để về gốc project, rồi trỏ tới file shared chung
+SHARED_COMMON = os.path.abspath(os.path.join(current_dir, "../../../shared/python/common.py"))
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-SUITE_ROOT = PROJECT_ROOT.parents[1]
-SHARED_COMMON = SUITE_ROOT / "shared" / "python" / "common.py"
+# Look for 'shared' folder to find SUITE_ROOT
+_current = PROJECT_ROOT
+SUITE_ROOT = PROJECT_ROOT # Default fallback
+for _ in range(5):
+    if (_current / "shared").exists():
+        SUITE_ROOT = _current
+        break
+    _current = _current.parent
 
 os.environ.setdefault("PQC_PROJECT_ROOT", str(PROJECT_ROOT))
 os.environ.setdefault("PQC_SUITE_ROOT", str(SUITE_ROOT))

@@ -1,25 +1,25 @@
 {
   "mode": "traditional",
-  "message": "Hello from traditional demo at 2026-05-10T03:18:43.615733Z",
-  "account": "0x3aBeB3b1EAd8EcC5203540db2d79dD1880dc94B1",
-  "contract_address": "0x1422a403ecCD22c97D6454d954ECE6777ddBC140",
+  "message": "Hello from traditional demo at 2026-05-12T08:25:39.875413Z",
+  "account": "0x84933505CcA98626c584F83D233b7f4C2E765410",
+  "contract_address": "0x49d82810B61e0452d91fcd561973B4D35423ff94",
   "chain_id": 11155111,
-  "record_id": 3,
-  "tx_hash": "3441988a6617cbdf13cbc650fcbc45c97676027870e913a1dcba2e1784580741",
+  "record_id": 2,
+  "tx_hash": "ea2ac632450722700052579c15eb810db6a092e863c761592b4853ad6ffdfc26",
   "gas_used": 277866,
   "status": 1,
-  "app_nonce": 1778383123615781868,
-  "timestamp": 1778383123,
-  "payload_hash": "0x3942fc7bcbee1a34ea26b3e2aa88ec2bba48f72972f11205796767120f9825de",
+  "app_nonce": 1778574339875470860,
+  "timestamp": 1778574339,
+  "payload_hash": "0xcd72e05bb6da0f249ee9ca86ce6ceadf77eb595c76f7040db8f3d798ec27de80",
   "pqc_proof_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "encrypted": false,
   "ipfs_cid": "",
   "algorithm": "none",
   "benchmark": {
-    "tx_build_seconds": 0.074981,
-    "ecdsa_sign_seconds": 0.02349,
-    "send_and_confirm_seconds": 4.110745,
+    "tx_build_seconds": 0.074567,
+    "ecdsa_sign_seconds": 0.006377,
+    "send_and_confirm_seconds": 7.989549,
     "signature_size_bytes": 65,
-    "raw_tx_size_bytes": 666
+    "raw_tx_size_bytes": 665
   }
 }
